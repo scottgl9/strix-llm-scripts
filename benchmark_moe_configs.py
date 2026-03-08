@@ -109,9 +109,22 @@ def main():
 
     batch_sizes = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
 
+    # BLOCK_SIZE_N/K must be included — vLLM's get_moe_wna16_block_config only
+    # auto-fills them when the loaded config is missing those keys, but when
+    # served from a tuned config file they are used directly. BLOCK_SIZE_K
+    # must divide K=3072 evenly (32, 64, 128 all do). BLOCK_SIZE_N choices
+    # are 32 or 64 (larger values rarely help for small N=1024).
     configs_to_test = [
-        {"BLOCK_SIZE_M": bm, "GROUP_SIZE_M": gm, "SPLIT_K": 1}
+        {
+            "BLOCK_SIZE_M": bm,
+            "BLOCK_SIZE_N": bn,
+            "BLOCK_SIZE_K": bk,
+            "GROUP_SIZE_M": gm,
+            "SPLIT_K": 1,
+        }
         for bm in [16, 32, 64, 128]
+        for bn in [32, 64]
+        for bk in [32, 64, 128]
         for gm in [1, 4, 8, 16, 32]
     ]
 
@@ -122,7 +135,8 @@ def main():
     # Warmup compilation
     t0 = time.time()
     r = benchmark_one(4, E, N, K, TOP_K, GS,
-                      {"BLOCK_SIZE_M": 16, "GROUP_SIZE_M": 1, "SPLIT_K": 1},
+                      {"BLOCK_SIZE_M": 16, "BLOCK_SIZE_N": 32, "BLOCK_SIZE_K": 64,
+                       "GROUP_SIZE_M": 1, "SPLIT_K": 1},
                       warmup=1, repeat=1)
     elapsed = time.time() - t0
     if r is None:
