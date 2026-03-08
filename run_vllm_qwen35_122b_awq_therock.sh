@@ -17,7 +17,7 @@ echo "WARNING: Ensure your system has at least 96GB+ of RAM to avoid an OOM cras
 
 # 2. Run the container with gfx1151 stability optimizations
 #    Patches are mounted into /patches and applied via apply_patches.py entrypoint
-docker run -it --rm \
+docker run -i --rm \
   --name "${CONTAINER_NAME}" \
   --device=/dev/kfd \
   --device=/dev/dri \
